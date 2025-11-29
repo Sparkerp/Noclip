@@ -1,0 +1,122 @@
+local msg = "Team Waves"
+local displayTime = 4
+
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+
+-- blur + title
+local blur = Instance.new("BlurEffect", game.Lighting)
+blur.Size = 0
+
+local label = Instance.new("TextLabel", gui)
+label.Size = UDim2.new(1, 0, 0.2, 0)
+label.Position = UDim2.new(0, 0, 0.45, 0)
+label.BackgroundTransparency = 1
+label.Text = msg
+label.TextColor3 = Color3.new(1,1,1)
+label.Font = Enum.Font.GothamBold
+label.TextScaled = true
+label.TextTransparency = 1
+label.Rotation = 3
+
+local ts = game:GetService("TweenService")
+local function tween(obj, time, props)
+	return ts:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props)
+end
+
+tween(label, .7, {TextTransparency = 0, Position = UDim2.new(0,0,0.4,0), Rotation = 0}):Play()
+tween(blur, .7, {Size = 12}):Play()
+
+task.wait(displayTime)
+
+tween(label, .6, {TextTransparency = 1, Position = UDim2.new(0,0,0.45,0), Rotation = -4}):Play()
+tween(blur, .6, {Size = 0}):Play()
+
+task.wait(.6)
+blur:Destroy()
+label:Destroy()
+-- removed gui:Destroy() so UI stays
+
+
+-- Noclip vars
+local Noclip
+local Clip = true
+
+local function noclip()
+	Clip = false
+	local function Nocl()
+		if not Clip and player.Character then
+			for _, v in pairs(player.Character:GetDescendants()) do
+				if v:IsA("BasePart") and v.CanCollide then
+					v.CanCollide = false
+				end
+			end
+		end
+	end
+	Noclip = game:GetService("RunService").Stepped:Connect(Nocl)
+end
+
+local function clip()
+	if Noclip then
+		Noclip:Disconnect()
+	end
+	Clip = true
+end
+
+-- Button
+local button = Instance.new("TextButton", gui)
+button.Size = UDim2.new(0, 180, 0, 50)
+button.Position = UDim2.new(0.5, -90, 0.9, -25)
+button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+button.BorderSizePixel = 0
+button.Text = "Noclip OFF"
+button.TextColor3 = Color3.fromRGB(255, 0, 0)
+button.Font = Enum.Font.GothamBold
+button.TextScaled = true
+button.AutoButtonColor = false
+
+-- Dragging
+local dragging = false
+local dragInput, mousePos, framePos
+
+button.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		mousePos = input.Position
+		framePos = button.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+button.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - mousePos
+		button.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+	end
+end)
+
+-- Toggle noclip
+local noclipActive = false
+button.MouseButton1Click:Connect(function()
+	if noclipActive then
+		clip()
+		button.Text = "Noclip OFF"
+		button.TextColor3 = Color3.fromRGB(255, 0, 0)
+		noclipActive = false
+	else
+		noclip()
+		button.Text = "Noclip ON"
+		button.TextColor3 = Color3.fromRGB(0, 255, 0)
+		noclipActive = true
+	end
+end)
